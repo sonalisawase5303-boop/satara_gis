@@ -1,579 +1,427 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-        <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
-        <link rel="stylesheet" href="css/qgis2web.css">
-        <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/leaflet.photon.css">
-        <style>
-        #map {
-            width: 1075px;
-            height: 539px;
-        }
-        </style>
-        <title></title>
-    </head>
-    <body>
-        <div id="map">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMC GIS Dashboard</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f8fafc;
+      overflow: hidden;
+    }
+
+    /* 1. TOP NAVBAR */
+    .navbar {
+      height: 56px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    .nav-badges {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      background-color: #f1f5f9;
+      color: #475569;
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .live-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #f1f5f9;
+      padding: 4px 12px;
+      border-radius: 18px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* 2. MAIN CONTAINER */
+    .main-container {
+      display: flex;
+      flex: 1;
+      position: relative;
+    }
+
+    /* 3. SIDEBAR */
+    .sidebar {
+      width: 250px;
+      background-color: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      z-index: 900;
+    }
+
+    .sidebar-header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .sidebar-header h3 {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-header span {
+      font-size: 0.8rem;
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    .sidebar-list {
+      padding: 12px 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Layer Item & Icons */
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .layer-label-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .color-icon {
+      width: 12px;
+      height: 12px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .sq-green { background-color: #84cc16; border-radius: 2px; }
+    .circle-brown { background-color: #a16207; border-radius: 50%; }
+    .circle-pink { background-color: #ec4899; border-radius: 50%; }
+    .sq-orange { background-color: #f97316; border-radius: 2px; }
+    .line-dark { background-color: #334155; height: 2px; width: 14px; }
+    .line-gray { background-color: #64748b; height: 2px; width: 14px; }
+    .circle-green { background-color: #22c55e; border-radius: 50%; }
+    .sq-cream { background-color: #d97706; border-radius: 2px; opacity: 0.6; }
+    .sq-pink { background-color: #ec4899; border-radius: 2px; }
+
+    /* Switch Design */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 18px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 18px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #2563eb;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* 4. MAP CONTAINER */
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="brand-title">SMC GIS Dashboard</div>
+    <div class="nav-badges">
+      <div class="badge">26 Wards</div>
+      <div class="badge">39 Health Units</div>
+      <div class="badge">17 Emergency</div>
+      <div class="live-toggle">
+        <span>Live System</span>
+        <label class="switch">
+          <input type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="main-container">
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h3>LAYER CATALOG</h3>
+        <span>Layers</span>
+      </div>
+
+      <div class="sidebar-list">
+        
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon sq-green"></span>
+            Landuse
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-landuse" checked onchange="toggleLayer('landuse')">
+            <span class="slider"></span>
+          </label>
         </div>
-        <script src="js/qgis2web_expressions.js"></script>
-        <script src="js/leaflet.js"></script>
-        <script src="js/L.Control.Layers.Tree.min.js"></script>
-        <script src="js/leaflet.rotatedMarker.js"></script>
-        <script src="js/leaflet.pattern.js"></script>
-        <script src="js/leaflet-hash.js"></script>
-        <script src="js/Autolinker.min.js"></script>
-        <script src="js/rbush.min.js"></script>
-        <script src="js/labelgun.min.js"></script>
-        <script src="js/labels.js"></script>
-        <script src="js/leaflet.photon.js"></script>
-        <script src="data/satara_b_2.js"></script>
-        <script src="data/landuse_3.js"></script>
-        <script src="data/building_4.js"></script>
-        <script src="data/wateways_5.js"></script>
-        <script src="data/water_6.js"></script>
-        <script src="data/railway_7.js"></script>
-        <script src="data/road_8.js"></script>
-        <script>
-        var map = L.map('map', {
-            zoomControl:false, maxZoom:28, minZoom:1
-        }).fitBounds([[16.49305047079176,72.4275044384707],[18.359301587602324,76.09382739982097]]);
-        var hash = new L.Hash(map);
-        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-        // remove popup's row if "visible-with-data"
-        function removeEmptyRowsFromPopupContent(content, feature) {
-         var tempDiv = document.createElement('div');
-         tempDiv.innerHTML = content;
-         var rows = tempDiv.querySelectorAll('tr');
-         for (var i = 0; i < rows.length; i++) {
-             var td = rows[i].querySelector('td.visible-with-data');
-             var key = td ? td.id : '';
-             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
-                 rows[i].parentNode.removeChild(rows[i]);
-             }
-         }
-         return tempDiv.innerHTML;
-        }
-        // modify popup if contains media
-        function addClassToPopupIfMedia(content, popup) {
-            var tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
-            var imgTd = tempDiv.querySelector('td img');
-            if (imgTd) {
-                var src = imgTd.getAttribute('src');
-                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
-                    popup._contentNode.classList.add('media');
-                    var img = popup._contentNode.querySelector('td img');
-                    if (img) {
-                        // If already loaded (cache), update immediately
-                        if (img.complete && img.naturalHeight > 0) {
-                            popup.update();
-                        } else {
-                            img.addEventListener('load', function() {
-                                popup.update();
-                            });
-                            img.addEventListener('error', function() {
-                                popup.update();
-                            });
-                        }
-                    }
-                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
-                    var audio = document.createElement('audio');
-                    audio.controls = true;
-                    audio.src = src;
-                    imgTd.parentNode.replaceChild(audio, imgTd);
-                    popup._contentNode.classList.add('media');
-                    setTimeout(function() {
-                        popup.setContent(tempDiv.innerHTML);
-                        popup.update();
-                    }, 10);
-                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
-                    var video = document.createElement('video');
-                    video.controls = true;
-                    video.src = src;
-                    video.style.width = "400px";
-                    video.style.height = "300px";
-                    video.style.maxHeight = "60vh";
-                    video.style.maxWidth = "60vw";
-                    imgTd.parentNode.replaceChild(video, imgTd);
-                    popup._contentNode.classList.add('media');
-                    // Aggiorna il popup quando il video carica i metadati
-                    video.addEventListener('loadedmetadata', function() {
-                        popup.update();
-                    });
-                    setTimeout(function() {
-                        popup.setContent(tempDiv.innerHTML);
-                        popup.update();
-                    }, 10);
-                } else {
-                    popup._contentNode.classList.remove('media');
-                }
-            } else {
-                popup._contentNode.classList.remove('media');
-            }
-        }
-        var zoomControl = L.control.zoom({
-            position: 'topleft'
-        }).addTo(map);
-        var bounds_group = new L.featureGroup([]);
-        function setBounds() {
-        }
-        map.createPane('pane_GoogleTerrain_0');
-        map.getPane('pane_GoogleTerrain_0').style.zIndex = 400;
-        var layer_GoogleTerrain_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-            pane: 'pane_GoogleTerrain_0',
-            opacity: 1.0,
-            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
-            minZoom: 1,
-            maxZoom: 28,
-            minNativeZoom: 0,
-            maxNativeZoom: 20
-        });
-        layer_GoogleTerrain_0;
-        map.addLayer(layer_GoogleTerrain_0);
-        map.createPane('pane_GoogleSatellite_1');
-        map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
-        var layer_GoogleSatellite_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            pane: 'pane_GoogleSatellite_1',
-            opacity: 1.0,
-            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
-            minZoom: 1,
-            maxZoom: 28,
-            minNativeZoom: 0,
-            maxNativeZoom: 20
-        });
-        layer_GoogleSatellite_1;
-        map.addLayer(layer_GoogleSatellite_1);
-        function pop_satara_b_2(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['OBJECTID_1'] !== null ? autolinker.link(String(feature.properties['OBJECTID_1']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['STATE_UT'] !== null ? autolinker.link(String(feature.properties['STATE_UT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['STATE_LGD'] !== null ? autolinker.link(String(feature.properties['STATE_LGD']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['DISTRICT'] !== null ? autolinker.link(String(feature.properties['DISTRICT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['DIST_LGD'] !== null ? autolinker.link(String(feature.properties['DIST_LGD']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['REMARKS'] !== null ? autolinker.link(String(feature.properties['REMARKS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? autolinker.link(String(feature.properties['Shape_Leng']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Le_1'] !== null ? autolinker.link(String(feature.properties['Shape_Le_1']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? autolinker.link(String(feature.properties['Shape_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
 
-        function style_satara_b_2_0() {
-            return {
-                pane: 'pane_satara_b_2',
-                opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 2.0, 
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(125,139,143,0.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_satara_b_2');
-        map.getPane('pane_satara_b_2').style.zIndex = 402;
-        map.getPane('pane_satara_b_2').style['mix-blend-mode'] = 'normal';
-        var layer_satara_b_2 = new L.geoJson(json_satara_b_2, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_satara_b_2',
-            layerName: 'layer_satara_b_2',
-            pane: 'pane_satara_b_2',
-            onEachFeature: pop_satara_b_2,
-            style: style_satara_b_2_0,
-        });
-        bounds_group.addLayer(layer_satara_b_2);
-        map.addLayer(layer_satara_b_2);
-        function pop_landuse_3(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon circle-brown"></span>
+            Places
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-places" checked onchange="toggleLayer('places')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_landuse_3_0() {
-            return {
-                pane: 'pane_landuse_3',
-                opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(253,191,111,1.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_landuse_3');
-        map.getPane('pane_landuse_3').style.zIndex = 403;
-        map.getPane('pane_landuse_3').style['mix-blend-mode'] = 'normal';
-        var layer_landuse_3 = new L.geoJson(json_landuse_3, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_landuse_3',
-            layerName: 'layer_landuse_3',
-            pane: 'pane_landuse_3',
-            onEachFeature: pop_landuse_3,
-            style: style_landuse_3_0,
-        });
-        bounds_group.addLayer(layer_landuse_3);
-        map.addLayer(layer_landuse_3);
-        function pop_building_4(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['type'] !== null ? autolinker.link(String(feature.properties['type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon circle-pink"></span>
+            pois
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-pois" checked onchange="toggleLayer('pois')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_building_4_0() {
-            return {
-                pane: 'pane_building_4',
-                opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(196,83,23,1.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_building_4');
-        map.getPane('pane_building_4').style.zIndex = 404;
-        map.getPane('pane_building_4').style['mix-blend-mode'] = 'normal';
-        var layer_building_4 = new L.geoJson(json_building_4, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_building_4',
-            layerName: 'layer_building_4',
-            pane: 'pane_building_4',
-            onEachFeature: pop_building_4,
-            style: style_building_4_0,
-        });
-        bounds_group.addLayer(layer_building_4);
-        map.addLayer(layer_building_4);
-        function pop_wateways_5(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['width'] !== null ? autolinker.link(String(feature.properties['width']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon sq-orange"></span>
+            Pois_1
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-pois1" checked onchange="toggleLayer('pois1')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_wateways_5_0() {
-            return {
-                pane: 'pane_wateways_5',
-                opacity: 1,
-                color: 'rgba(19,126,223,1.0)',
-                dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 1.0,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_wateways_5');
-        map.getPane('pane_wateways_5').style.zIndex = 405;
-        map.getPane('pane_wateways_5').style['mix-blend-mode'] = 'normal';
-        var layer_wateways_5 = new L.geoJson(json_wateways_5, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_wateways_5',
-            layerName: 'layer_wateways_5',
-            pane: 'pane_wateways_5',
-            onEachFeature: pop_wateways_5,
-            style: style_wateways_5_0,
-        });
-        bounds_group.addLayer(layer_wateways_5);
-        map.addLayer(layer_wateways_5);
-        function pop_water_6(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon line-dark"></span>
+            Railways
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-railways" checked onchange="toggleLayer('railways')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_water_6_0() {
-            return {
-                pane: 'pane_water_6',
-                opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(166,206,227,1.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_water_6');
-        map.getPane('pane_water_6').style.zIndex = 406;
-        map.getPane('pane_water_6').style['mix-blend-mode'] = 'normal';
-        var layer_water_6 = new L.geoJson(json_water_6, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_water_6',
-            layerName: 'layer_water_6',
-            pane: 'pane_water_6',
-            onEachFeature: pop_water_6,
-            style: style_water_6_0,
-        });
-        bounds_group.addLayer(layer_water_6);
-        map.addLayer(layer_water_6);
-        function pop_railway_7(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['bridge'] !== null ? autolinker.link(String(feature.properties['bridge']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['tunnel'] !== null ? autolinker.link(String(feature.properties['tunnel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon line-gray"></span>
+            Roads
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-roads" checked onchange="toggleLayer('roads')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_railway_7_0() {
-            return {
-                pane: 'pane_railway_7',
-                opacity: 1,
-                color: 'rgba(150,67,23,1.0)',
-                dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 1.0,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_railway_7');
-        map.getPane('pane_railway_7').style.zIndex = 407;
-        map.getPane('pane_railway_7').style['mix-blend-mode'] = 'normal';
-        var layer_railway_7 = new L.geoJson(json_railway_7, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_railway_7',
-            layerName: 'layer_railway_7',
-            pane: 'pane_railway_7',
-            onEachFeature: pop_railway_7,
-            style: style_railway_7_0,
-        });
-        bounds_group.addLayer(layer_railway_7);
-        map.addLayer(layer_railway_7);
-        function pop_road_8(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['code'] !== null ? autolinker.link(String(feature.properties['code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fclass'] !== null ? autolinker.link(String(feature.properties['fclass']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['ref'] !== null ? autolinker.link(String(feature.properties['ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['oneway'] !== null ? autolinker.link(String(feature.properties['oneway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['maxspeed'] !== null ? autolinker.link(String(feature.properties['maxspeed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['bridge'] !== null ? autolinker.link(String(feature.properties['bridge']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['tunnel'] !== null ? autolinker.link(String(feature.properties['tunnel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon circle-green"></span>
+            Trafic
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-traffic" checked onchange="toggleLayer('traffic')">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-        function style_road_8_0() {
-            return {
-                pane: 'pane_road_8',
-                opacity: 1,
-                color: 'rgba(255,90,88,1.0)',
-                dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 1.0,
-                fillOpacity: 0,
-                interactive: true,
-            }
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon sq-cream"></span>
+            Transport
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-transport" checked onchange="toggleLayer('transport')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon sq-pink"></span>
+            Water
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-water" checked onchange="toggleLayer('water')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon line-dark"></span>
+            Waterways_Clip
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-waterways" checked onchange="toggleLayer('waterways')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon sq-orange"></span>
+            Sangola_clip
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-sangola" checked onchange="toggleLayer('sangola')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-item">
+          <div class="layer-label-group">
+            <span class="color-icon line-gray"></span>
+            Adminareas
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chk-admin" checked onchange="toggleLayer('admin')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAP CONTAINER -->
+    <div id="map"></div>
+
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Sangola Coordinates
+    const sangolaCenter = [17.4332, 75.1978];
+
+    // Initialize Map
+    const map = L.map('map', {
+      center: sangolaCenter,
+      zoom: 13,
+      zoomControl: true
+    });
+
+    // Google Satellite Layer
+    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '&copy; Google Satellite'
+    }).addTo(map);
+
+    const layers = {};
+
+    // Sangola Polygon Layer
+    layers['sangola'] = L.polygon([
+      [17.442, 75.185], [17.445, 75.210], [17.428, 75.215], 
+      [17.420, 75.205], [17.422, 75.180]
+    ], {
+      color: '#ec4899',
+      fillColor: '#ec4899',
+      fillOpacity: 0.65,
+      weight: 1.5
+    }).addTo(map);
+
+    // Points Overlay
+    layers['pois'] = L.layerGroup([
+      L.circleMarker([17.438, 75.201], { radius: 5, fillColor: '#ec4899', color: '#fff', fillOpacity: 0.9 }),
+      L.circleMarker([17.430, 75.195], { radius: 5, fillColor: '#ec4899', color: '#fff', fillOpacity: 0.9 }),
+      L.circleMarker([17.435, 75.208], { radius: 5, fillColor: '#ec4899', color: '#fff', fillOpacity: 0.9 })
+    ]).addTo(map);
+
+    // Toggle Layer Control
+    function toggleLayer(key) {
+      const isChecked = document.getElementById(`chk-${key}`)?.checked;
+      if (layers[key]) {
+        if (isChecked) {
+          map.addLayer(layers[key]);
+        } else {
+          map.removeLayer(layers[key]);
         }
-        map.createPane('pane_road_8');
-        map.getPane('pane_road_8').style.zIndex = 408;
-        map.getPane('pane_road_8').style['mix-blend-mode'] = 'normal';
-        var layer_road_8 = new L.geoJson(json_road_8, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_road_8',
-            layerName: 'layer_road_8',
-            pane: 'pane_road_8',
-            onEachFeature: pop_road_8,
-            style: style_road_8_0,
-        });
-        bounds_group.addLayer(layer_road_8);
-        map.addLayer(layer_road_8);
-        var overlaysTree = [
-            {label: '<img src="legend/road_8.png" /> road', layer: layer_road_8},
-            {label: '<img src="legend/railway_7.png" /> railway', layer: layer_railway_7},
-            {label: '<img src="legend/water_6.png" /> water', layer: layer_water_6},
-            {label: '<img src="legend/wateways_5.png" /> wateways', layer: layer_wateways_5},
-            {label: '<img src="legend/building_4.png" /> building', layer: layer_building_4},
-            {label: '<img src="legend/landuse_3.png" /> land use', layer: layer_landuse_3},
-            {label: '<img src="legend/satara_b_2.png" /> satara_b', layer: layer_satara_b_2},
-            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
-            {label: "Google Terrain", layer: layer_GoogleTerrain_0},]
-        var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
-            //closedSymbol: '&#8862; &#x1f5c0;',
-            //openedSymbol: '&#8863; &#x1f5c1;',
-            //collapseAll: 'Collapse all',
-            //expandAll: 'Expand all',
-            collapsed: true,
-        });
-        lay.addTo(map);
-        setBounds();
-        </script>
-    </body>
+      }
+    }
+  </script>
+</body>
 </html>
